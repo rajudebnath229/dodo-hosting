@@ -30,3 +30,5 @@
   .account-label{max-width:92px}
   .auth-card{padding:25px 21px}
 }
+
+body.modal-open{overflow:hidden}

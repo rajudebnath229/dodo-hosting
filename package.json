@@ -1,0 +1,8 @@
+{
+  "name": "dodo-hosting",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dodo Hosting Minecraft server dashboard foundation",
+  "scripts": {},
+  "engines": { "node": ">=20" }
+}

@@ -1,17 +1,98 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101827">
-<meta name="description" content="Dodo Hosting — manage your Minecraft Java and Bedrock servers."><title>Dodo Hosting</title><link rel="stylesheet" href="assets/css/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<meta name="description" content="Dodo Hosting — manage your Minecraft Java and Bedrock servers.">
+<title>Dodo Hosting</title>
+<link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-<header class="topbar"><a class="brand" href="#"><span class="brand-mark">D</span><span>Dodo<span class="brand-light">Hosting</span></span></a><nav><a href="#features">Features</a><a href="#plans">Plans</a><a class="nav-button" href="#dashboard">Dashboard</a></nav></header>
+<header class="topbar">
+  <a class="brand" href="#"><span class="brand-mark">D</span><span>Dodo<span class="brand-light">Hosting</span></span></a>
+  <nav aria-label="Main navigation">
+    <a href="#features">Features</a><a href="#plans">Plans</a><a class="nav-button" href="#dashboard">Dashboard</a>
+    <span class="account-label" id="account-label" hidden></span>
+    <button class="nav-button auth-nav-button" id="auth-open" type="button">Sign in</button>
+    <button class="nav-button auth-nav-button" id="auth-logout" type="button" hidden>Sign out</button>
+  </nav>
+</header>
+
+<div class="auth-backdrop" id="auth-modal" hidden>
+  <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <button class="auth-close" id="auth-close" type="button" aria-label="Close sign in window">×</button>
+    <span class="eyebrow">WELCOME TO DODO</span>
+    <h2 id="auth-title">Sign in to your account</h2>
+    <p class="auth-subtitle" id="auth-subtitle">Continue to your hosting dashboard.</p>
+    <div class="auth-switch">
+      <button type="button" class="auth-tab active" id="show-login">Sign in</button>
+      <button type="button" class="auth-tab" id="show-register">Create account</button>
+    </div>
+    <form id="auth-form">
+      <label for="auth-email">Email address</label>
+      <input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
+      <label for="auth-password">Password</label>
+      <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="72" placeholder="At least 10 characters" required>
+      <p class="auth-help" id="password-help">Use at least 10 characters.</p>
+      <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+      <button class="button primary full auth-submit" id="auth-submit" type="submit">Sign in</button>
+    </form>
+    <p class="auth-footnote">Use an email address you control. Never share your password.</p>
+  </section>
+</div>
+
 <main>
-<section class="hero"><div class="hero-copy"><span class="eyebrow">✦ YOUR WORLD, YOUR SERVER</span><h1>Minecraft hosting.<br><span>Made simple.</span></h1><p>One home for your Java and Bedrock servers. Easy to understand, simple to manage, and built to grow with your community.</p><div class="hero-actions"><a class="button primary" href="#dashboard">Explore dashboard →</a><a class="button secondary" href="#plans">View plans</a></div><div class="edition-row"><span>✓ Java Edition</span><span>✓ Bedrock Edition</span><span>✓ Friendly dashboard</span></div></div>
-<div class="hero-art"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="server-card"><div class="server-head">▦ &nbsp; SERVER OVERVIEW <span class="online-dot"></span></div><div class="server-name">My Minecraft World</div><div class="server-status">Ready for your next adventure</div><div class="server-meter"><span></span></div><div class="server-stats"><div><small>EDITION</small><b>Java + Bedrock</b></div><div><small>STATUS</small><b class="muted">Setup preview</b></div></div></div><div class="floating-block block-a">⛏</div><div class="floating-block block-b">✦</div></div></section>
-<section class="section" id="dashboard"><div class="section-heading"><div><span class="eyebrow">CONTROL CENTER</span><h2>Your servers, at a glance.</h2></div><span class="preview-tag">UI PREVIEW</span></div><div class="dashboard-grid">
-<article class="panel"><div class="panel-title"><div><span class="eyebrow">SERVER LIST</span><h3>My servers</h3></div><span class="count">01</span></div><div class="server-list-item"><div class="game-icon">▧</div><div class="server-info"><b>My First Server</b><small>Java Edition · Demo server</small></div><span class="status-pill">Preview</span></div><div class="server-list-item"><div class="game-icon bedrock">◇</div><div class="server-info"><b>Bedrock World</b><small>Bedrock Edition · Not created</small></div><span class="status-pill neutral">Planned</span></div><button class="button primary full" id="create-server">＋ Create a server</button><p class="hint" id="notice" role="status">Demo dashboard — no server has been provisioned.</p></article>
-<article class="panel quick-panel" id="features"><span class="eyebrow">BUILT FOR PLAYERS</span><h3>Everything in one place.</h3><div class="feature"><span>⌘</span><div><b>Simple controls</b><small>Designed for clear server management.</small></div></div><div class="feature"><span>▤</span><div><b>Console & logs</b><small>View server activity when connected.</small></div></div><div class="feature"><span>◷</span><div><b>Backups</b><small>Plan reliable world backups.</small></div></div><div class="feature"><span>⬡</span><div><b>Java + Bedrock</b><small>Support both editions.</small></div></div></article></div></section>
-<section class="section plans" id="plans"><div class="section-heading"><div><span class="eyebrow">SIMPLE CHOICES</span><h2>Start free. Grow when ready.</h2></div></div><div class="plan-grid"><article class="plan-card"><span class="eyebrow">STARTER</span><h3>Free</h3><p>For trying out your first community server.</p><ul><li>Java and Bedrock roadmap</li><li>Basic dashboard</li><li>Usage limits to be announced</li></ul><span class="plan-note">Availability planned</span></article><article class="plan-card highlighted"><span class="eyebrow">MORE POWER</span><h3>Premium</h3><p>For communities that need more resources.</p><ul><li>Higher resource limits planned</li><li>Expanded backup options planned</li><li>Priority support planned</li></ul><span class="plan-note">Pricing not announced</span></article></div></section>
-</main><footer><a class="brand" href="#"><span class="brand-mark">D</span><span>Dodo<span class="brand-light">Hosting</span></span></a><span>Made for your next adventure. © Dodo Hosting</span></footer><script src="assets/js/app.js"></script>
-</body></html>
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">✦ YOUR WORLD, YOUR SERVER</span>
+    <h1>Minecraft hosting.<br><span>Made simple.</span></h1>
+    <p>One home for your Java and Bedrock servers. Easy to understand, simple to manage, and built to grow with your community.</p>
+    <div class="hero-actions"><a class="button primary" href="#dashboard">Explore dashboard →</a><a class="button secondary" href="#plans">View plans</a></div>
+    <div class="edition-row"><span>✓ Java Edition</span><span>✓ Bedrock Edition</span><span>✓ Friendly dashboard</span></div>
+  </div>
+  <div class="hero-art">
+    <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+    <div class="server-card">
+      <div class="server-head">▦ &nbsp; SERVER OVERVIEW <span class="online-dot"></span></div>
+      <div class="server-name">My Minecraft World</div><div class="server-status">Ready for your next adventure</div>
+      <div class="server-meter"><span></span></div>
+      <div class="server-stats"><div><small>EDITION</small><b>Java + Bedrock</b></div><div><small>STATUS</small><b class="muted">Setup preview</b></div></div>
+    </div>
+    <div class="floating-block block-a">⛏</div><div class="floating-block block-b">✦</div>
+  </div>
+</section>
+
+<section class="section" id="dashboard">
+  <div class="section-heading"><div><span class="eyebrow">CONTROL CENTER</span><h2>Your servers, at a glance.</h2></div><span class="preview-tag">UI PREVIEW</span></div>
+  <div class="dashboard-grid">
+    <article class="panel">
+      <div class="panel-title"><div><span class="eyebrow">SERVER LIST</span><h3>My servers</h3></div><span class="count">01</span></div>
+      <div class="server-list-item"><div class="game-icon">▧</div><div class="server-info"><b>My First Server</b><small>Java Edition · Demo server</small></div><span class="status-pill">Preview</span></div>
+      <div class="server-list-item"><div class="game-icon bedrock">◇</div><div class="server-info"><b>Bedrock World</b><small>Bedrock Edition · Not created</small></div><span class="status-pill neutral">Planned</span></div>
+      <button class="button primary full" id="create-server" type="button">＋ Create a server</button>
+      <p class="hint" id="notice" role="status">Demo dashboard — no server has been provisioned.</p>
+    </article>
+    <article class="panel quick-panel" id="features">
+      <span class="eyebrow">BUILT FOR PLAYERS</span><h3>Everything in one place.</h3>
+      <div class="feature"><span>⌘</span><div><b>Simple controls</b><small>Designed for clear server management.</small></div></div>
+      <div class="feature"><span>▤</span><div><b>Console & logs</b><small>View server activity when connected.</small></div></div>
+      <div class="feature"><span>◷</span><div><b>Backups</b><small>Plan reliable world backups.</small></div></div>
+      <div class="feature"><span>⬡</span><div><b>Java + Bedrock</b><small>Support both editions.</small></div></div>
+    </article>
+  </div>
+</section>
+
+<section class="section plans" id="plans">
+  <div class="section-heading"><div><span class="eyebrow">SIMPLE CHOICES</span><h2>Start free. Grow when ready.</h2></div></div>
+  <div class="plan-grid">
+    <article class="plan-card"><span class="eyebrow">STARTER</span><h3>Free</h3><p>For trying out your first community server.</p><ul><li>Java and Bedrock roadmap</li><li>Basic dashboard</li><li>Usage limits to be announced</li></ul><span class="plan-note">Availability planned</span></article>
+    <article class="plan-card highlighted"><span class="eyebrow">MORE POWER</span><h3>Premium</h3><p>For communities that need more resources.</p><ul><li>Higher resource limits planned</li><li>Expanded backup options planned</li><li>Priority support planned</li></ul><span class="plan-note">Pricing not announced</span></article>
+  </div>
+</section>
+</main>
+
+<footer><a class="brand" href="#"><span class="brand-mark">D</span><span>Dodo<span class="brand-light">Hosting</span></span></a><span>Made for your next adventure. © Dodo Hosting</span></footer>
+<script src="/assets/js/app.js" defer></script>
+</body>
+</html>

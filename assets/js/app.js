@@ -49,7 +49,8 @@ function closeAuth() {
   document.body.classList.remove("modal-open");
   authForm.reset();
   setMessage("");
-  authOpen.focus();
+  if (!authOpen.hidden) authOpen.focus();
+  else authLogout.focus();
 }
 
 function renderAccount(user) {

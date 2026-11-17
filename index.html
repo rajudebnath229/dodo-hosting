@@ -7,6 +7,7 @@
 <meta name="description" content="Dodo Hosting — manage your Minecraft Java and Bedrock servers.">
 <title>Dodo Hosting</title>
 <link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <header class="topbar">
@@ -23,22 +24,11 @@
   <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <button class="auth-close" id="auth-close" type="button" aria-label="Close sign in window">×</button>
     <span class="eyebrow">WELCOME TO DODO</span>
-    <h2 id="auth-title">Sign in to your account</h2>
-    <p class="auth-subtitle" id="auth-subtitle">Continue to your hosting dashboard.</p>
-    <div class="auth-switch">
-      <button type="button" class="auth-tab active" id="show-login">Sign in</button>
-      <button type="button" class="auth-tab" id="show-register">Create account</button>
-    </div>
-    <form id="auth-form">
-      <label for="auth-email">Email address</label>
-      <input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required>
-      <label for="auth-password">Password</label>
-      <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="72" placeholder="At least 10 characters" required>
-      <p class="auth-help" id="password-help">Use at least 10 characters.</p>
-      <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
-      <button class="button primary full auth-submit" id="auth-submit" type="submit">Sign in</button>
-    </form>
-    <p class="auth-footnote">Use an email address you control. Never share your password.</p>
+    <h2 id="auth-title">Sign in to Dodo Hosting</h2>
+    <p class="auth-subtitle">Use your Google account to continue to your hosting dashboard.</p>
+    <div id="google-signin" class="google-signin" aria-label="Sign in with Google"></div>
+    <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+    <p class="auth-footnote">Dodo Hosting uses Google to verify your sign-in. Your Google password is never shared with Dodo Hosting.</p>
   </section>
 </div>
 
@@ -67,11 +57,10 @@
   <div class="section-heading"><div><span class="eyebrow">CONTROL CENTER</span><h2>Your servers, at a glance.</h2></div><span class="preview-tag">UI PREVIEW</span></div>
   <div class="dashboard-grid">
     <article class="panel">
-      <div class="panel-title"><div><span class="eyebrow">SERVER LIST</span><h3>My servers</h3></div><span class="count">01</span></div>
-      <div class="server-list-item"><div class="game-icon">▧</div><div class="server-info"><b>My First Server</b><small>Java Edition · Demo server</small></div><span class="status-pill">Preview</span></div>
-      <div class="server-list-item"><div class="game-icon bedrock">◇</div><div class="server-info"><b>Bedrock World</b><small>Bedrock Edition · Not created</small></div><span class="status-pill neutral">Planned</span></div>
+      <div class="panel-title"><div><span class="eyebrow">SERVER LIST</span><h3>My servers</h3></div><span class="count">00</span></div>
+      <div class="empty-server-state"><span class="empty-server-icon">◇</span><b>No servers yet</b><small>Your Minecraft servers will appear here after hosting infrastructure is connected.</small></div>
       <button class="button primary full" id="create-server" type="button">＋ Create a server</button>
-      <p class="hint" id="notice" role="status">Demo dashboard — no server has been provisioned.</p>
+      <p class="hint" id="notice" role="status">Sign in to your account. Server provisioning is not connected yet.</p>
     </article>
     <article class="panel quick-panel" id="features">
       <span class="eyebrow">BUILT FOR PLAYERS</span><h3>Everything in one place.</h3>

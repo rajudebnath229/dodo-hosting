@@ -4,51 +4,27 @@ const authModal = document.getElementById("auth-modal");
 const authOpen = document.getElementById("auth-open");
 const authClose = document.getElementById("auth-close");
 const authLogout = document.getElementById("auth-logout");
-const authForm = document.getElementById("auth-form");
-const authEmail = document.getElementById("auth-email");
-const authPassword = document.getElementById("auth-password");
-const authTitle = document.getElementById("auth-title");
-const authSubtitle = document.getElementById("auth-subtitle");
-const authSubmit = document.getElementById("auth-submit");
 const authMessage = document.getElementById("auth-message");
-const passwordHelp = document.getElementById("password-help");
-const showLogin = document.getElementById("show-login");
-const showRegister = document.getElementById("show-register");
 const accountLabel = document.getElementById("account-label");
+const googleButton = document.getElementById("google-signin");
 
-let authMode = "login";
 let currentUser = null;
+let googleClientId = null;
 
 function setMessage(message, success = false) {
   authMessage.textContent = message;
   authMessage.classList.toggle("success", success);
 }
 
-function setMode(mode) {
-  authMode = mode;
-  const registering = mode === "register";
-  authTitle.textContent = registering ? "Create your account" : "Sign in to your account";
-  authSubtitle.textContent = registering ? "Create an account to access your Dodo dashboard." : "Continue to your hosting dashboard.";
-  authSubmit.textContent = registering ? "Create account" : "Sign in";
-  authPassword.autocomplete = registering ? "new-password" : "current-password";
-  passwordHelp.textContent = registering ? "Use 10–72 characters. A longer unique passphrase is best." : "Enter your account password.";
-  showLogin.classList.toggle("active", !registering);
-  showRegister.classList.toggle("active", registering);
-  setMessage("");
-}
-
-function openAuth(mode = "login") {
-  setMode(mode);
+function openAuth() {
   authModal.hidden = false;
   document.body.classList.add("modal-open");
-  window.setTimeout(() => authEmail.focus(), 0);
+  renderGoogleButton();
 }
 
 function closeAuth() {
   authModal.hidden = true;
   document.body.classList.remove("modal-open");
-  authForm.reset();
-  setMessage("");
   if (!authOpen.hidden) authOpen.focus();
   else authLogout.focus();
 }
@@ -70,9 +46,49 @@ async function apiRequest(path, options = {}) {
     ...options
   });
   let body = {};
-  try { body = await response.json(); } catch { /* The API may return an empty response. */ }
+  try { body = await response.json(); } catch { /* Empty response. */ }
   if (!response.ok) throw new Error(body.error || "Something went wrong. Please try again.");
   return body;
+}
+
+function renderGoogleButton() {
+  if (!googleClientId || !window.google?.accounts?.id || authModal.hidden) return;
+  googleButton.replaceChildren();
+  window.google.accounts.id.initialize({
+    client_id: googleClientId,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true
+  });
+  window.google.accounts.id.renderButton(googleButton, {
+    type: "standard",
+    theme: "filled_black",
+    size: "large",
+    shape: "pill",
+    text: "continue_with",
+    width: 320,
+    logo_alignment: "left"
+  });
+}
+
+async function handleGoogleCredential(response) {
+  if (!response?.credential) {
+    setMessage("Google did not return a sign-in credential. Please try again.");
+    return;
+  }
+  setMessage("Verifying your Google account…");
+  try {
+    const data = await apiRequest("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential: response.credential })
+    });
+    renderAccount(data.user);
+    closeAuth();
+    notice.textContent = "Signed in with Google. Server provisioning is the next milestone; no Minecraft server has been created yet.";
+    notice.classList.add("notice-active");
+  } catch (error) {
+    setMessage(error.message);
+  }
 }
 
 async function loadSession() {
@@ -84,11 +100,19 @@ async function loadSession() {
   }
 }
 
-authOpen.addEventListener("click", () => openAuth("login"));
-authClose.addEventListener("click", closeAuth);
-showLogin.addEventListener("click", () => setMode("login"));
-showRegister.addEventListener("click", () => setMode("register"));
+async function loadGoogleConfig() {
+  try {
+    const data = await apiRequest("/api/config", { method: "GET", headers: {} });
+    googleClientId = data.googleClientId;
+    if (!googleClientId) throw new Error("Google sign-in is not configured on the server yet.");
+    renderGoogleButton();
+  } catch (error) {
+    setMessage(error.message);
+  }
+}
 
+authOpen.addEventListener("click", openAuth);
+authClose.addEventListener("click", closeAuth);
 authModal.addEventListener("click", (event) => {
   if (event.target === authModal) closeAuth();
 });
@@ -96,49 +120,16 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !authModal.hidden) closeAuth();
 });
 
-authForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const email = authEmail.value.trim();
-  const password = authPassword.value;
-  authSubmit.disabled = true;
-  authSubmit.textContent = authMode === "register" ? "Creating account…" : "Signing in…";
-  setMessage("");
-  try {
-    const endpoint = authMode === "register" ? "/api/auth/register" : "/api/auth/login";
-    const data = await apiRequest(endpoint, {
-      method: "POST",
-      body: JSON.stringify({ email, password })
-    });
-    renderAccount(data.user);
-    closeAuth();
-    if (notice) {
-      notice.textContent = authMode === "register"
-        ? "Account created. Server provisioning is not connected yet."
-        : "Signed in. Your account is ready; server provisioning is the next milestone.";
-      notice.classList.add("notice-active");
-    }
-  } catch (error) {
-    setMessage(error.message);
-  } finally {
-    authSubmit.disabled = false;
-    authSubmit.textContent = authMode === "register" ? "Create account" : "Sign in";
-  }
-});
-
 authLogout.addEventListener("click", async () => {
   authLogout.disabled = true;
   try {
     await apiRequest("/api/auth/logout", { method: "POST", body: "{}" });
     renderAccount(null);
-    if (notice) {
-      notice.textContent = "You have signed out.";
-      notice.classList.add("notice-active");
-    }
+    notice.textContent = "You have signed out.";
+    notice.classList.add("notice-active");
   } catch (error) {
-    if (notice) {
-      notice.textContent = error.message;
-      notice.classList.add("notice-active");
-    }
+    notice.textContent = error.message;
+    notice.classList.add("notice-active");
   } finally {
     authLogout.disabled = false;
   }
@@ -146,13 +137,14 @@ authLogout.addEventListener("click", async () => {
 
 createButton?.addEventListener("click", () => {
   if (!currentUser) {
-    notice.textContent = "Please sign in before continuing. Server creation will be enabled after hosting infrastructure is connected.";
+    notice.textContent = "Please sign in with Google before continuing.";
     notice.classList.add("notice-active");
-    openAuth("login");
+    openAuth();
     return;
   }
-  notice.textContent = "You are signed in. Real server creation is not enabled yet; we still need to connect a secure Minecraft host.";
+  notice.textContent = "You're signed in. Real server creation is not enabled until a secure Minecraft hosting node is connected.";
   notice.classList.add("notice-active");
 });
 
 loadSession();
+loadGoogleConfig();

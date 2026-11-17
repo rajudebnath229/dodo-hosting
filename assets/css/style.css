@@ -32,3 +32,6 @@
 }
 
 body.modal-open{overflow:hidden}
+
+/* Google-only sign-in */
+.google-signin{display:flex;justify-content:center;min-height:44px;margin:24px 0 8px}.empty-server-state{min-height:150px;border:1px dashed #344a65;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;padding:20px;color:var(--muted)}.empty-server-state b{color:var(--text);font-size:14px}.empty-server-state small{max-width:260px;font-size:11px;line-height:1.6}.empty-server-icon{font-size:28px;color:var(--cyan)}

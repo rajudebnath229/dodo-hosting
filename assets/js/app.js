@@ -7,6 +7,7 @@ const authLogout = document.getElementById("auth-logout");
 const authMessage = document.getElementById("auth-message");
 const accountLabel = document.getElementById("account-label");
 const googleButton = document.getElementById("google-signin");
+const googleScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
 
 let currentUser = null;
 let googleClientId = null;
@@ -66,7 +67,7 @@ function renderGoogleButton() {
     size: "large",
     shape: "pill",
     text: "continue_with",
-    width: 320,
+    width: Math.min(320, googleButton.clientWidth || 320),
     logo_alignment: "left"
   });
 }
@@ -110,6 +111,8 @@ async function loadGoogleConfig() {
     setMessage(error.message);
   }
 }
+
+googleScript?.addEventListener("load", renderGoogleButton);
 
 authOpen.addEventListener("click", openAuth);
 authClose.addEventListener("click", closeAuth);

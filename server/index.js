@@ -3,12 +3,12 @@ import helmet from "helmet";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import rateLimit from "express-rate-limit";
-import bcrypt from "bcryptjs";
+import { OAuth2Client } from "google-auth-library";
 import { Pool } from "pg";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const required = ["DATABASE_URL", "SESSION_SECRET", "APP_ORIGIN"];
+const required = ["DATABASE_URL", "SESSION_SECRET", "APP_ORIGIN", "GOOGLE_CLIENT_ID"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
   console.error("Missing required environment variables:", missing.join(", "));
@@ -32,6 +32,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.PGSSL === "true" ? { rejectUnauthorized: true } : undefined
 });
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const PgSession = connectPgSimple(session);
 
 if (isProduction) app.set("trust proxy", 1);
@@ -40,10 +41,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://accounts.google.com/gsi/client"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:"],
+      imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
+      connectSrc: ["'self'", "https://accounts.google.com"],
+      frameSrc: ["https://accounts.google.com"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       frameAncestors: ["'none'"]
@@ -71,7 +74,7 @@ const authLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  message: { error: "Too many account attempts. Please wait and try again." }
+  message: { error: "Too many sign-in attempts. Please wait and try again." }
 });
 
 function sameOrigin(req, res, next) {
@@ -83,17 +86,14 @@ function sameOrigin(req, res, next) {
   next();
 }
 
-function cleanEmail(value) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
-function validPassword(value) {
-  return typeof value === "string" && value.length >= 10 && value.length <= 72;
-}
-
-// Serve only the public website files; never expose the repository root.
+// Serve only public website files; never expose the repository root.
 app.use("/assets", express.static(join(projectDir, "assets"), { maxAge: isProduction ? "1h" : 0 }));
 app.get("/", (_req, res) => res.sendFile(join(projectDir, "index.html")));
+
+app.get("/api/config", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID });
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "dodo-hosting-api" });
@@ -117,61 +117,49 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
-app.post("/api/auth/register", sameOrigin, authLimiter, async (req, res) => {
-  const email = cleanEmail(req.body?.email);
-  const password = req.body?.password;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-    return res.status(400).json({ error: "Enter a valid email address." });
+app.post("/api/auth/google", sameOrigin, authLimiter, async (req, res) => {
+  const credential = req.body?.credential;
+  if (typeof credential !== "string" || credential.length > 10000) {
+    return res.status(400).json({ error: "Google sign-in response is missing. Please try again." });
   }
-  if (!validPassword(password)) {
-    return res.status(400).json({ error: "Password must be 10–72 characters." });
-  }
+
   try {
-    const passwordHash = await bcrypt.hash(password, 12);
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    const profile = ticket.getPayload();
+    if (!profile?.sub || !profile.email || profile.email_verified !== true) {
+      return res.status(401).json({ error: "Use a Google account with a verified email address." });
+    }
+
+    // A Google subject is the stable account identifier. Do not silently link
+    // an existing password-based account just because its email matches.
     const result = await pool.query(
-      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at",
-      [email, passwordHash]
+      `INSERT INTO users (email, google_sub)
+       VALUES ($1, $2)
+       ON CONFLICT (google_sub) DO UPDATE SET email = EXCLUDED.email
+       RETURNING id, email, created_at`,
+      [profile.email.trim().toLowerCase(), profile.sub]
     );
+
     req.session.regenerate((sessionError) => {
       if (sessionError) return res.status(500).json({ error: "Could not start account session." });
       req.session.userId = result.rows[0].id;
       req.session.save((saveError) => {
         if (saveError) return res.status(500).json({ error: "Could not save account session." });
-        res.status(201).json({ user: result.rows[0] });
+        res.json({ user: result.rows[0] });
       });
     });
   } catch (error) {
-    if (error.code === "23505") return res.status(409).json({ error: "An account with that email already exists." });
-    console.error("Registration failed:", error.message);
-    res.status(500).json({ error: "Could not create account." });
-  }
-});
-
-app.post("/api/auth/login", sameOrigin, authLimiter, async (req, res) => {
-  const email = cleanEmail(req.body?.email);
-  const password = req.body?.password;
-  if (!email || typeof password !== "string" || password.length > 72) {
-    return res.status(400).json({ error: "Enter your email and password." });
-  }
-  try {
-    const result = await pool.query(
-      "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
-      [email]
-    );
-    const user = result.rows[0];
-    const valid = user ? await bcrypt.compare(password, user.password_hash) : false;
-    if (!valid) return res.status(401).json({ error: "Email or password is incorrect." });
-    req.session.regenerate((sessionError) => {
-      if (sessionError) return res.status(500).json({ error: "Could not start account session." });
-      req.session.userId = user.id;
-      req.session.save((saveError) => {
-        if (saveError) return res.status(500).json({ error: "Could not save account session." });
-        res.json({ user: { id: user.id, email: user.email, created_at: user.created_at } });
-      });
-    });
-  } catch (error) {
-    console.error("Login failed:", error.message);
-    res.status(500).json({ error: "Could not sign in." });
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "This email already belongs to an account. Contact support to resolve it." });
+    }
+    if (error.message?.includes("Token used too late") || error.message?.includes("Invalid token")) {
+      return res.status(401).json({ error: "Google sign-in expired. Please try again." });
+    }
+    console.error("Google sign-in failed:", error.message);
+    res.status(401).json({ error: "Google sign-in could not be verified. Please try again." });
   }
 });
 

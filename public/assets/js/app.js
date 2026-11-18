@@ -151,3 +151,55 @@ createButton?.addEventListener("click", () => {
 
 loadSession();
 loadGoogleConfig();
+
+
+// DODO AI infrastructure assistant (read-only tools in the backend).
+const agentForm = document.getElementById("agent-form");
+const agentInput = document.getElementById("agent-input");
+const agentMessages = document.getElementById("agent-messages");
+const agentSend = document.getElementById("agent-send");
+const agentHistory = [];
+
+function addAgentMessage(role, text) {
+  const item = document.createElement("div");
+  item.className = "agent-message " + (role === "user" ? "user" : "assistant");
+  const label = document.createElement("b");
+  label.textContent = role === "user" ? "YOU" : "DODO AI";
+  const paragraph = document.createElement("p");
+  paragraph.textContent = text;
+  item.append(label, paragraph);
+  agentMessages.append(item);
+  agentMessages.scrollTop = agentMessages.scrollHeight;
+}
+
+agentForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const text = agentInput.value.trim();
+  if (!text || agentSend.disabled) return;
+  if (!currentUser) {
+    notice.textContent = "Please sign in with Google before using DODO AI.";
+    notice.classList.add("notice-active");
+    openAuth();
+    return;
+  }
+  addAgentMessage("user", text);
+  agentHistory.push({ role: "user", text });
+  agentInput.value = "";
+  agentSend.disabled = true;
+  agentSend.textContent = "Thinking…";
+  try {
+    const data = await apiRequest("/api/agent/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages: agentHistory.slice(-10) })
+    });
+    const reply = typeof data.reply === "string" ? data.reply : "I couldn't read the agent response.";
+    addAgentMessage("assistant", reply);
+    agentHistory.push({ role: "model", text: reply });
+  } catch (error) {
+    addAgentMessage("assistant", error.message);
+  } finally {
+    agentSend.disabled = false;
+    agentSend.textContent = "Send ↑";
+    agentInput.focus();
+  }
+});

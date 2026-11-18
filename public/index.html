@@ -53,6 +53,22 @@
   </div>
 </section>
 
+<section class="section" id="ai-agent">
+  <div class="section-heading"><div><span class="eyebrow">DODO AI OPERATIONS</span><h2>Meet your hosting assistant.</h2></div><span class="preview-tag">GEMINI POWERED</span></div>
+  <div class="agent-panel">
+    <div class="agent-intro"><div class="agent-avatar">✦</div><div><b>DODO AI Agent</b><small>Infrastructure assistant · Read-only tools</small></div><span class="agent-live">● READY WHEN CONFIGURED</span></div>
+    <div class="agent-messages" id="agent-messages" role="log" aria-live="polite">
+      <div class="agent-message assistant"><b>DODO AI</b><p>Hi! I can help explain your hosting plans and inspect your Minecraft server list. VM creation and server provisioning are not connected yet.</p></div>
+    </div>
+    <form class="agent-composer" id="agent-form">
+      <label class="sr-only" for="agent-input">Message DODO AI</label>
+      <textarea id="agent-input" rows="2" maxlength="1200" placeholder="Ask about your servers, plans, or infrastructure…" required></textarea>
+      <button class="button primary" id="agent-send" type="submit">Send ↑</button>
+    </form>
+    <p class="agent-disclaimer">Your chat is sent securely to the server-side Gemini API. Do not enter passwords, API keys, or private credentials. The first version can only read your own hosting records and plan information.</p>
+  </div>
+</section>
+
 <section class="section" id="dashboard">
   <div class="section-heading"><div><span class="eyebrow">CONTROL CENTER</span><h2>Your servers, at a glance.</h2></div><span class="preview-tag">UI PREVIEW</span></div>
   <div class="dashboard-grid">

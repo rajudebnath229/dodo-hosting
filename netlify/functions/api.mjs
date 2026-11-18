@@ -59,6 +59,15 @@ function getSession(req) {
   if (!secret || secret.length < 32) return null;
   return verify(getCookie(req, cookieName), secret);
 }
+function validNodeToken(req) {
+  const configured = readEnv("DODO_NODE_TOKEN");
+  const supplied = req.headers.get("authorization") || "";
+  if (!configured || configured.length < 32 || !supplied.startsWith("Bearer ")) return false;
+  const candidate = supplied.slice(7);
+  const a = Buffer.from(configured);
+  const b = Buffer.from(candidate);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 const googleClient = () => {
   const clientId = readEnv("GOOGLE_CLIENT_ID");
   if (!clientId) throw new Error("Google sign-in is not configured yet.");
@@ -68,6 +77,24 @@ const googleClient = () => {
 export default async (req) => {
   const url = new URL(req.url);
   const path = url.pathname;
+
+  if (path === "/api/node/heartbeat" && req.method === "POST") {
+    if (!validNodeToken(req)) return json({ error: "Node authentication failed." }, 401);
+    try {
+      const result = await getPool().query(
+        `INSERT INTO hosting_nodes (node_key, name, platform, minecraft_edition, status, last_seen_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'online', now(), now())
+         ON CONFLICT (node_key) DO UPDATE
+         SET status = 'online', last_seen_at = now(), updated_at = now()
+         RETURNING id, name, platform, minecraft_edition, status, last_seen_at`,
+        ["windows-bedrock-test-01", "DODO Windows Test Node", "windows", "bedrock"]
+      );
+      return json({ success: true, node: result.rows[0] });
+    } catch (error) {
+      console.error("Node heartbeat failed:", error.message);
+      return json({ error: "Node heartbeat could not be saved." }, 503);
+    }
+  }
 
   if (path === "/api/config" && req.method === "GET") {
     const clientId = readEnv("GOOGLE_CLIENT_ID");
@@ -129,5 +156,5 @@ export default async (req) => {
 };
 
 export const config = {
-  path: ["/api/config", "/api/auth/me", "/api/auth/google", "/api/auth/logout"]
+  path: ["/api/node/heartbeat", "/api/config", "/api/auth/me", "/api/auth/google", "/api/auth/logout"]
 };
